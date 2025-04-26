@@ -21,6 +21,7 @@ const Game = () => {
   const [gameResult, setGameResult] = useState("");
   const [asker, setAsker] = useState("");
   const [answerer, setAnswerer] = useState("");
+  const [spyGuessResult, setSpyGuessResult] = useState("");
 
   useEffect(() => {
     if (phase === "voting-result") {
@@ -166,10 +167,14 @@ const Game = () => {
     const newScores = { ...scores };
     if (guess === subject) {
       newScores[outPlayer] += 15;
+      setSpyGuessResult("✅ The spy guessed correctly!");
+    } else {
+      setSpyGuessResult("❌ The spy guessed wrong.");
     }
     setScores(newScores);
     setPhase("end-round");
   };
+  
 
   const resetForNewRound = () => {
     setPhase("choose-topic");
@@ -288,17 +293,19 @@ const Game = () => {
         </>
       )}
 
-      {phase === "end-round" && (
-        <>
-          <h2>✅ Round Finished!</h2>
-          <button style={nextButtonStyle} onClick={resetForNewRound}>
-            🔄 Start New Round
-          </button>
-          <button style={resetButtonStyle} onClick={() => setPhase("leaderboard")}>
-            🏆 See Leaderboard
-          </button>
-        </>
-      )}
+{phase === "end-round" && (
+  <>
+    <h2>✅ Round Finished!</h2>
+    <p style={{ fontSize: "20px", margin: "20px 0" }}>{spyGuessResult}</p>
+    <button style={nextButtonStyle} onClick={resetForNewRound}>
+      🔄 Start New Round
+    </button>
+    <button style={resetButtonStyle} onClick={() => setPhase("leaderboard")}>
+      🏆 See Leaderboard
+    </button>
+  </>
+)}
+
 
       {phase === "leaderboard" && (
         <>
