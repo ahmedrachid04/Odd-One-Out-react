@@ -23,8 +23,11 @@ const Game = () => {
   const [answerer, setAnswerer] = useState("");
 
   useEffect(() => {
-    document.title = "🎈 Odd One Out Party!";
-  }, []);
+    if (phase === "voting-result") {
+      calculateVotingResults();
+    }
+  }, [phase]);
+  
 
   const pageStyle = {
     fontFamily: "'Poppins', 'Comic Sans MS', cursive",
@@ -268,7 +271,6 @@ const Game = () => {
         <>
           <h2>🎉 Voting Results!</h2>
           <p>{gameResult}</p>
-          {calculateVotingResults()}
           <button style={nextButtonStyle} onClick={startGuessing}>
             🎯 Spy Guess!
           </button>
