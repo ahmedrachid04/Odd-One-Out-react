@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { topics } from "./topics"; // same topics you provided earlier
+import { topics } from "./topics"; // your same topics.js
 import Confetti from "react-confetti";
 
 const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -19,6 +19,8 @@ const Game = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [guessOptions, setGuessOptions] = useState([]);
   const [gameResult, setGameResult] = useState("");
+  const [asker, setAsker] = useState("");
+  const [answerer, setAnswerer] = useState("");
 
   useEffect(() => {
     document.title = "🎈 Odd One Out Party!";
@@ -94,8 +96,26 @@ const Game = () => {
     if (currentRevealIndex + 1 < players.length) {
       setCurrentRevealIndex(currentRevealIndex + 1);
     } else {
-      setPhase("discussion");
+      chooseRandomPair();
+      setPhase("ask-answer");
     }
+  };
+
+  const chooseRandomPair = () => {
+    let [p1, p2] = getTwoDifferentRandomPlayers();
+    if (Math.random() < 0.5) {
+      setAsker(p1);
+      setAnswerer(p2);
+    } else {
+      setAsker(p2);
+      setAnswerer(p1);
+    }
+  };
+
+  const getTwoDifferentRandomPlayers = () => {
+    let p1 = getRandomItem(players);
+    let p2 = getRandomItem(players.filter(p => p !== p1));
+    return [p1, p2];
   };
 
   const startVoting = () => {
@@ -161,7 +181,7 @@ const Game = () => {
   return (
     <div style={pageStyle}>
       {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} />}
-      
+
       {phase === "setup" && (
         <>
           <h1>🎈 Odd One Out Party 🎈</h1>
@@ -219,11 +239,16 @@ const Game = () => {
         </>
       )}
 
-      {phase === "discussion" && (
+      {phase === "ask-answer" && (
         <>
-          <h2>🗣️ Discuss Freely!</h2>
-          <button style={nextButtonStyle} onClick={startVoting}>
-            Start Voting 🗳️
+          <h2>❓ Question Time</h2>
+          <p><strong>{asker}</strong> asks a question to <strong>{answerer}</strong>!</p>
+          <button style={nextButtonStyle} onClick={chooseRandomPair}>
+            🔄 Next Pair
+          </button>
+          <br />
+          <button style={voteButtonStyle} onClick={startVoting}>
+            🗳️ Start Voting
           </button>
         </>
       )}
@@ -243,16 +268,16 @@ const Game = () => {
         <>
           <h2>🎉 Voting Results!</h2>
           <p>{gameResult}</p>
-          <button style={nextButtonStyle} onClick={startGuessing}>
-            Let the Spy Guess! 🎯
-          </button>
           {calculateVotingResults()}
+          <button style={nextButtonStyle} onClick={startGuessing}>
+            🎯 Spy Guess!
+          </button>
         </>
       )}
 
       {phase === "spy-guess" && (
         <>
-          <h2>🎯 {outPlayer}, guess the topic!</h2>
+          <h2>🎯 {outPlayer}, guess the subject!</h2>
           {guessOptions.map((option) => (
             <button key={option} style={voteButtonStyle} onClick={() => spyGuess(option)}>
               {option}
@@ -265,10 +290,10 @@ const Game = () => {
         <>
           <h2>✅ Round Finished!</h2>
           <button style={nextButtonStyle} onClick={resetForNewRound}>
-            Start New Round 🔄
+            🔄 Start New Round
           </button>
           <button style={resetButtonStyle} onClick={() => setPhase("leaderboard")}>
-            See Final Scores 🏆
+            🏆 See Leaderboard
           </button>
         </>
       )}
