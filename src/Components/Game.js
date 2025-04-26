@@ -1,35 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { topics } from "./topics";
 
 const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const flattenTopics = () => Object.values(topics).flat();
-
-const spinnerStyle = {
-  width: "40px",
-  height: "40px",
-  border: "5px solid lightgray",
-  borderTop: "5px solid #3498db",
-  borderRadius: "50%",
-  animation: "spin 1s linear infinite",
-  margin: "20px auto",
-};
-
-const buttonStyle = {
-  padding: "12px",
-  width: "100%",
-  borderRadius: "8px",
-  border: "none",
-  color: "white",
-  backgroundColor: "#3498db",
-  fontSize: "16px",
-  cursor: "pointer",
-  transition: "transform 0.2s, background-color 0.3s",
-};
-
-const buttonHoverStyle = {
-  transform: "scale(1.05)",
-  backgroundColor: "#2980b9",
-};
 
 const Game = () => {
   const [players, setPlayers] = useState([]);
@@ -40,6 +13,10 @@ const Game = () => {
   const [gamePhase, setGamePhase] = useState("setup");
   const [loading, setLoading] = useState(false);
   const [hoveredButton, setHoveredButton] = useState(null);
+
+  useEffect(() => {
+    document.title = "🎯 Odd One Out Game!";
+  }, []);
 
   const startGame = () => {
     setLoading(true);
@@ -95,15 +72,56 @@ const Game = () => {
     setGamePhase("setup");
   };
 
+  const pageStyles = {
+    padding: "20px",
+    maxWidth: "420px",
+    margin: "0 auto",
+    fontFamily: "'Comic Sans MS', 'Poppins', cursive",
+    animation: "fadeIn 1s ease-in-out",
+  };
+
+  const buttonStyles = (bgColor) => ({
+    padding: "12px",
+    width: "100%",
+    marginTop: "10px",
+    borderRadius: "30px",
+    border: "none",
+    fontSize: "18px",
+    fontWeight: "bold",
+    backgroundColor: bgColor,
+    color: "white",
+    boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+  });
+
+  const buttonHover = {
+    transform: "scale(1.05)",
+    filter: "brightness(110%)",
+  };
+
+  const bubbleBox = {
+    backgroundColor: "#f0f9ff",
+    padding: "20px",
+    borderRadius: "20px",
+    boxShadow: "0 5px 15px rgba(0, 0, 0, 0.1)",
+    marginBottom: "20px",
+  };
+
+  const spinnerStyle = {
+    width: "50px",
+    height: "50px",
+    border: "6px solid lightgray",
+    borderTop: "6px solid #ff6b81",
+    borderRadius: "50%",
+    animation: "spin 1s linear infinite",
+    margin: "30px auto",
+  };
+
   return (
-    <div style={{
-      padding: "20px",
-      maxWidth: "400px",
-      margin: "0 auto",
-      animation: "fadeIn 0.8s ease-in-out",
-    }}>
-      <h1 style={{ fontSize: "26px", fontWeight: "bold", textAlign: "center", marginBottom: "20px" }}>
-        Odd One Out
+    <div style={pageStyles}>
+      <h1 style={{ fontSize: "32px", fontWeight: "bold", textAlign: "center", marginBottom: "20px", color: "#ff6b81" }}>
+        🎯 Odd One Out
       </h1>
 
       {loading ? (
@@ -112,17 +130,17 @@ const Game = () => {
           <p>Loading...</p>
         </div>
       ) : (
-        <>
+        <div style={bubbleBox}>
           {gamePhase === "setup" && (
             <>
               <input
-                placeholder="Enter player name"
+                placeholder="Enter player name..."
                 style={{
                   width: "100%",
-                  padding: "10px",
+                  padding: "12px",
+                  borderRadius: "20px",
+                  border: "2px solid #ffcccb",
                   marginBottom: "10px",
-                  borderRadius: "8px",
-                  border: "1px solid lightgray",
                   fontSize: "16px",
                 }}
                 value={playerName}
@@ -130,9 +148,8 @@ const Game = () => {
               />
               <button
                 style={{
-                  ...buttonStyle,
-                  ...(hoveredButton === "add" ? buttonHoverStyle : {}),
-                  backgroundColor: "#2ecc71",
+                  ...buttonStyles("#ff9ff3"),
+                  ...(hoveredButton === "add" ? buttonHover : {}),
                 }}
                 onMouseEnter={() => setHoveredButton("add")}
                 onMouseLeave={() => setHoveredButton(null)}
@@ -143,130 +160,121 @@ const Game = () => {
                   }
                 }}
               >
-                Add Player
+                ➕ Add Player
               </button>
 
-              <ul style={{ textAlign: "center", marginTop: "10px" }}>
+              <ul style={{ listStyle: "none", textAlign: "center", marginTop: "10px", padding: 0 }}>
                 {players.map((p) => (
-                  <li key={p}>{p}</li>
+                  <li key={p} style={{ margin: "4px 0", fontSize: "18px" }}>{p}</li>
                 ))}
               </ul>
 
               <button
                 disabled={players.length < 3}
                 style={{
-                  ...buttonStyle,
+                  ...buttonStyles("#00cec9"),
                   marginTop: "20px",
-                  ...(hoveredButton === "start" ? buttonHoverStyle : {}),
-                  backgroundColor: "#e67e22",
+                  ...(hoveredButton === "start" ? buttonHover : {}),
                 }}
                 onMouseEnter={() => setHoveredButton("start")}
                 onMouseLeave={() => setHoveredButton(null)}
                 onClick={startGame}
               >
-                Start Game
+                🚀 Start Game
               </button>
             </>
           )}
 
           {gamePhase === "question" && roundData && (
             <>
-              <div style={{ textAlign: "center", marginBottom: "10px", fontSize: "18px" }}>
-                Topic: <i>{roundData.outPlayer === roundData.asker || roundData.outPlayer === roundData.answerer ? "SECRET" : roundData.topic}</i>
-              </div>
-              <div style={{ textAlign: "center", marginBottom: "10px" }}>
-                Asker: <strong>{roundData.asker}</strong> | Answerer: <strong>{roundData.answerer}</strong>
-              </div>
+              <p style={{ textAlign: "center", fontSize: "18px", marginBottom: "10px" }}>
+                Topic: <strong>{roundData.outPlayer === roundData.asker || roundData.outPlayer === roundData.answerer ? "❓ SECRET" : roundData.topic}</strong>
+              </p>
+              <p style={{ textAlign: "center", marginBottom: "20px" }}>
+                Asker: <b>{roundData.asker}</b> | Answerer: <b>{roundData.answerer}</b>
+              </p>
               <button
                 style={{
-                  ...buttonStyle,
-                  backgroundColor: "#9b59b6",
-                  ...(hoveredButton === "ask" ? buttonHoverStyle : {}),
+                  ...buttonStyles("#74b9ff"),
+                  ...(hoveredButton === "ask" ? buttonHover : {}),
                 }}
                 onMouseEnter={() => setHoveredButton("ask")}
                 onMouseLeave={() => setHoveredButton(null)}
-                onClick={() =>
-                  setRoundData({ ...roundData, questionsAsked: roundData.questionsAsked + 1 })
-                }
+                onClick={() => setRoundData({ ...roundData, questionsAsked: roundData.questionsAsked + 1 })}
               >
-                Ask Question
+                ❓ Ask Question
               </button>
               <button
                 style={{
-                  ...buttonStyle,
-                  backgroundColor: "#34495e",
-                  marginTop: "10px",
-                  ...(hoveredButton === "next" ? buttonHoverStyle : {}),
+                  ...buttonStyles("#a29bfe"),
+                  ...(hoveredButton === "next" ? buttonHover : {}),
                 }}
                 onMouseEnter={() => setHoveredButton("next")}
                 onMouseLeave={() => setHoveredButton(null)}
                 onClick={() => setGamePhase("vote")}
               >
-                Next Phase
+                ➡️ Next Phase
               </button>
             </>
           )}
 
           {gamePhase === "vote" && (
             <>
-              <h2 style={{ textAlign: "center", fontSize: "20px", fontWeight: "bold" }}>
-                Vote for the Odd One Out
+              <h2 style={{ textAlign: "center", fontSize: "24px", marginBottom: "20px" }}>
+                🗳️ Vote for the Odd One Out
               </h2>
               {players.map((voter) => (
                 <div key={voter} style={{ marginBottom: "10px" }}>
-                  <label style={{ fontWeight: "bold" }}>{voter}:</label>
+                  <label><b>{voter}</b> votes:</label>
                   <select
                     style={{
                       width: "100%",
-                      padding: "8px",
+                      padding: "10px",
+                      borderRadius: "15px",
                       marginTop: "5px",
-                      borderRadius: "8px",
-                      border: "1px solid lightgray",
+                      border: "2px solid #81ecec",
                     }}
                     onChange={(e) => handleVote(voter, e.target.value)}
                   >
                     <option value="">--</option>
                     {players.filter(p => p !== voter).map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
+                      <option key={p} value={p}>{p}</option>
                     ))}
                   </select>
                 </div>
               ))}
               <button
                 style={{
-                  ...buttonStyle,
-                  backgroundColor: "#e74c3c",
-                  ...(hoveredButton === "submit" ? buttonHoverStyle : {}),
+                  ...buttonStyles("#fab1a0"),
+                  ...(hoveredButton === "submit" ? buttonHover : {}),
                 }}
                 onMouseEnter={() => setHoveredButton("submit")}
                 onMouseLeave={() => setHoveredButton(null)}
                 onClick={endVoting}
               >
-                Submit Votes
+                ✅ Submit Votes
               </button>
             </>
           )}
 
           {gamePhase === "guess" && (
             <>
-              <h2 style={{ textAlign: "center", fontSize: "20px", fontWeight: "bold", marginBottom: "20px" }}>
-                {roundData.outPlayer}, guess the topic!
+              <h2 style={{ textAlign: "center", fontSize: "24px", marginBottom: "20px" }}>
+                🎯 Guess the Topic!
               </h2>
-              <div style={{ maxHeight: "50vh", overflowY: "scroll" }}>
+              <div style={{ maxHeight: "300px", overflowY: "scroll" }}>
                 {Object.entries(topics).map(([category, items]) => (
-                  <div key={category}>
-                    <h3 style={{ marginTop: "10px", fontWeight: "bold" }}>{category}</h3>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "10px" }}>
+                  <div key={category} style={{ marginBottom: "10px" }}>
+                    <h3 style={{ fontWeight: "bold", fontSize: "18px" }}>{category}</h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "8px" }}>
                       {items.map((item) => (
                         <button
                           key={item}
                           style={{
-                            padding: "10px",
-                            backgroundColor: "#ecf0f1",
+                            padding: "8px",
+                            borderRadius: "15px",
+                            backgroundColor: "#ffeaa7",
                             border: "none",
-                            borderRadius: "8px",
                             cursor: "pointer",
                           }}
                           onClick={() => handleGuess(item)}
@@ -283,50 +291,38 @@ const Game = () => {
 
           {gamePhase === "leaderboard" && (
             <>
-              <h2 style={{ textAlign: "center", fontSize: "24px", fontWeight: "bold", marginBottom: "20px" }}>
-                Leaderboard
+              <h2 style={{ textAlign: "center", fontSize: "28px", marginBottom: "20px", color: "#00b894" }}>
+                🏆 Leaderboard
               </h2>
-              <ul style={{ listStyleType: "none", padding: "0" }}>
-                {Object.entries(scores)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([player, score]) => (
-                    <li
-                      key={player}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: "10px",
-                        fontSize: "18px",
-                      }}
-                    >
-                      <span>{player}</span>
-                      <span>{score} pts</span>
-                    </li>
-                  ))}
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {Object.entries(scores).sort((a, b) => b[1] - a[1]).map(([player, score]) => (
+                  <li key={player} style={{ marginBottom: "8px", fontSize: "18px", textAlign: "center" }}>
+                    {player}: <strong>{score}</strong> pts
+                  </li>
+                ))}
               </ul>
               <button
                 style={{
-                  ...buttonStyle,
-                  backgroundColor: "#1abc9c",
-                  marginTop: "30px",
-                  ...(hoveredButton === "newgame" ? buttonHoverStyle : {}),
+                  ...buttonStyles("#55efc4"),
+                  marginTop: "20px",
+                  ...(hoveredButton === "newgame" ? buttonHover : {}),
                 }}
                 onMouseEnter={() => setHoveredButton("newgame")}
                 onMouseLeave={() => setHoveredButton(null)}
                 onClick={resetGame}
               >
-                New Game
+                🔄 New Game
               </button>
             </>
           )}
-        </>
+        </div>
       )}
 
       {/* Animations keyframes */}
       <style>{`
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
         }
         @keyframes spin {
           0% { transform: rotate(0deg); }
