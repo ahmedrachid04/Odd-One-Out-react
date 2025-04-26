@@ -1,334 +1,293 @@
 import React, { useState, useEffect } from "react";
-import { topics } from "./topics";
+import { topics } from "./topics"; // same topics you provided earlier
+import Confetti from "react-confetti";
 
 const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
-const flattenTopics = () => Object.values(topics).flat();
 
 const Game = () => {
   const [players, setPlayers] = useState([]);
   const [playerName, setPlayerName] = useState("");
   const [scores, setScores] = useState({});
-  const [roundData, setRoundData] = useState(null);
+  const [phase, setPhase] = useState("setup");
+  const [chosenTopic, setChosenTopic] = useState("");
+  const [subject, setSubject] = useState("");
+  const [outPlayer, setOutPlayer] = useState("");
+  const [revealedPlayers, setRevealedPlayers] = useState([]);
+  const [currentRevealIndex, setCurrentRevealIndex] = useState(0);
   const [votes, setVotes] = useState({});
-  const [gamePhase, setGamePhase] = useState("setup");
-  const [loading, setLoading] = useState(false);
-  const [hoveredButton, setHoveredButton] = useState(null);
+  const [currentVotingIndex, setCurrentVotingIndex] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [guessOptions, setGuessOptions] = useState([]);
+  const [gameResult, setGameResult] = useState("");
 
   useEffect(() => {
-    document.title = "🎯 Odd One Out Game!";
+    document.title = "🎈 Odd One Out Party!";
   }, []);
 
+  const pageStyle = {
+    fontFamily: "'Poppins', 'Comic Sans MS', cursive",
+    textAlign: "center",
+    padding: "20px",
+    background: "linear-gradient(135deg, #fceabb, #f8b500)",
+    minHeight: "100vh",
+    color: "#333",
+  };
+
+  const buttonStyle = {
+    backgroundColor: "#ff6b81",
+    color: "white",
+    padding: "15px 20px",
+    border: "none",
+    borderRadius: "30px",
+    marginTop: "20px",
+    fontSize: "18px",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    boxShadow: "0px 5px 10px rgba(0,0,0,0.1)",
+  };
+
+  const nextButtonStyle = {
+    ...buttonStyle,
+    backgroundColor: "#1abc9c",
+  };
+
+  const voteButtonStyle = {
+    ...buttonStyle,
+    backgroundColor: "#74b9ff",
+    marginTop: "10px",
+  };
+
+  const resetButtonStyle = {
+    ...buttonStyle,
+    backgroundColor: "#636e72",
+    marginTop: "30px",
+  };
+
+  const inputStyle = {
+    padding: "12px",
+    borderRadius: "20px",
+    border: "2px solid #fab1a0",
+    width: "80%",
+    marginBottom: "10px",
+    fontSize: "16px",
+  };
+
   const startGame = () => {
-    setLoading(true);
-    setTimeout(() => {
-      const scoreInit = {};
-      players.forEach((p) => (scoreInit[p] = 0));
-      const realTopic = getRandomItem(flattenTopics());
-      const outPlayer = getRandomItem(players);
-      let asker = getRandomItem(players);
-      let answerer = getRandomItem(players.filter(p => p !== asker));
-      setRoundData({ asker, answerer, outPlayer, topic: realTopic, questionsAsked: 0 });
-      setScores(scoreInit);
-      setGamePhase("question");
-      setLoading(false);
-    }, 1000);
+    const scoreInit = {};
+    players.forEach(p => (scoreInit[p] = scores[p] || 0));
+    setScores(scoreInit);
+    setPhase("choose-topic");
   };
 
-  const handleVote = (voter, votee) => {
-    setVotes((prev) => ({ ...prev, [voter]: votee }));
+  const chooseTopic = (topic) => {
+    setChosenTopic(topic);
+    const selectedSubject = getRandomItem(topics[topic]);
+    setSubject(selectedSubject);
+    const chosenOutPlayer = getRandomItem(players);
+    setOutPlayer(chosenOutPlayer);
+    setRevealedPlayers([]);
+    setCurrentRevealIndex(0);
+    setPhase("reveal-roles");
   };
 
-  const endVoting = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setGamePhase("guess");
-      setLoading(false);
-    }, 1000);
+  const handleReveal = () => {
+    if (currentRevealIndex + 1 < players.length) {
+      setCurrentRevealIndex(currentRevealIndex + 1);
+    } else {
+      setPhase("discussion");
+    }
   };
 
-  const handleGuess = (guess) => {
-    setLoading(true);
-    setTimeout(() => {
-      let newScores = { ...scores };
-      const correctGuess = guess === roundData.topic;
-      players.forEach((p) => {
-        if (p === roundData.outPlayer) {
-          newScores[p] += correctGuess ? roundData.questionsAsked * 10 : 0;
-        } else if (votes[p] === roundData.outPlayer) {
-          newScores[p] += 30;
-        }
-      });
-      setScores(newScores);
-      setGamePhase("leaderboard");
-      setLoading(false);
-    }, 1000);
+  const startVoting = () => {
+    setCurrentVotingIndex(0);
+    setVotes({});
+    setPhase("voting");
+  };
+
+  const castVote = (votedFor) => {
+    setVotes({ ...votes, [players[currentVotingIndex]]: votedFor });
+    if (currentVotingIndex + 1 < players.length) {
+      setCurrentVotingIndex(currentVotingIndex + 1);
+    } else {
+      setPhase("voting-result");
+    }
+  };
+
+  const calculateVotingResults = () => {
+    const voteCounts = {};
+    Object.values(votes).forEach(v => voteCounts[v] = (voteCounts[v] || 0) + 1);
+    const mostVoted = Object.keys(voteCounts).reduce((a, b) => voteCounts[a] > voteCounts[b] ? a : b);
+    const correct = mostVoted === outPlayer;
+
+    const newScores = { ...scores };
+    players.forEach(p => {
+      if (correct && votes[p] === outPlayer) {
+        newScores[p] += 10;
+      } else if (!correct && p === outPlayer) {
+        newScores[p] += 5;
+      }
+    });
+
+    setScores(newScores);
+    setGameResult(correct ? "Players found the out of topic!" : "Wrong vote! The out of topic survived!");
+    setShowConfetti(true);
+    setTimeout(() => setShowConfetti(false), 4000);
+  };
+
+  const startGuessing = () => {
+    setGuessOptions([...topics[chosenTopic]]);
+    setPhase("spy-guess");
+  };
+
+  const spyGuess = (guess) => {
+    const newScores = { ...scores };
+    if (guess === subject) {
+      newScores[outPlayer] += 15;
+    }
+    setScores(newScores);
+    setPhase("end-round");
+  };
+
+  const resetForNewRound = () => {
+    setPhase("choose-topic");
   };
 
   const resetGame = () => {
     setPlayers([]);
     setScores({});
-    setRoundData(null);
-    setVotes({});
-    setGamePhase("setup");
-  };
-
-  const pageStyles = {
-    padding: "20px",
-    maxWidth: "420px",
-    margin: "0 auto",
-    fontFamily: "'Comic Sans MS', 'Poppins', cursive",
-    animation: "fadeIn 1s ease-in-out",
-  };
-
-  const buttonStyles = (bgColor) => ({
-    padding: "12px",
-    width: "100%",
-    marginTop: "10px",
-    borderRadius: "30px",
-    border: "none",
-    fontSize: "18px",
-    fontWeight: "bold",
-    backgroundColor: bgColor,
-    color: "white",
-    boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-  });
-
-  const buttonHover = {
-    transform: "scale(1.05)",
-    filter: "brightness(110%)",
-  };
-
-  const bubbleBox = {
-    backgroundColor: "#f0f9ff",
-    padding: "20px",
-    borderRadius: "20px",
-    boxShadow: "0 5px 15px rgba(0, 0, 0, 0.1)",
-    marginBottom: "20px",
-  };
-
-  const spinnerStyle = {
-    width: "50px",
-    height: "50px",
-    border: "6px solid lightgray",
-    borderTop: "6px solid #ff6b81",
-    borderRadius: "50%",
-    animation: "spin 1s linear infinite",
-    margin: "30px auto",
+    setPhase("setup");
   };
 
   return (
-    <div style={pageStyles}>
-      <h1 style={{ fontSize: "32px", fontWeight: "bold", textAlign: "center", marginBottom: "20px", color: "#ff6b81" }}>
-        🎯 Odd One Out
-      </h1>
-
-      {loading ? (
-        <div style={{ textAlign: "center" }}>
-          <div style={spinnerStyle}></div>
-          <p>Loading...</p>
-        </div>
-      ) : (
-        <div style={bubbleBox}>
-          {gamePhase === "setup" && (
-            <>
-              <input
-                placeholder="Enter player name..."
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  borderRadius: "20px",
-                  border: "2px solid #ffcccb",
-                  marginBottom: "10px",
-                  fontSize: "16px",
-                }}
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-              />
-              <button
-                style={{
-                  ...buttonStyles("#ff9ff3"),
-                  ...(hoveredButton === "add" ? buttonHover : {}),
-                }}
-                onMouseEnter={() => setHoveredButton("add")}
-                onMouseLeave={() => setHoveredButton(null)}
-                onClick={() => {
-                  if (playerName && !players.includes(playerName)) {
-                    setPlayers([...players, playerName]);
-                    setPlayerName("");
-                  }
-                }}
-              >
-                ➕ Add Player
-              </button>
-
-              <ul style={{ listStyle: "none", textAlign: "center", marginTop: "10px", padding: 0 }}>
-                {players.map((p) => (
-                  <li key={p} style={{ margin: "4px 0", fontSize: "18px" }}>{p}</li>
-                ))}
-              </ul>
-
-              <button
-                disabled={players.length < 3}
-                style={{
-                  ...buttonStyles("#00cec9"),
-                  marginTop: "20px",
-                  ...(hoveredButton === "start" ? buttonHover : {}),
-                }}
-                onMouseEnter={() => setHoveredButton("start")}
-                onMouseLeave={() => setHoveredButton(null)}
-                onClick={startGame}
-              >
-                🚀 Start Game
-              </button>
-            </>
+    <div style={pageStyle}>
+      {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} />}
+      
+      {phase === "setup" && (
+        <>
+          <h1>🎈 Odd One Out Party 🎈</h1>
+          <input
+            placeholder="Enter player name..."
+            style={inputStyle}
+            value={playerName}
+            onChange={(e) => setPlayerName(e.target.value)}
+          />
+          <br />
+          <button style={buttonStyle} onClick={() => {
+            if (playerName && !players.includes(playerName)) {
+              setPlayers([...players, playerName]);
+              setPlayerName("");
+            }
+          }}>
+            ➕ Add Player
+          </button>
+          <div style={{ marginTop: "20px" }}>
+            {players.map((p, idx) => (
+              <div key={idx}>{p}</div>
+            ))}
+          </div>
+          {players.length >= 3 && (
+            <button style={nextButtonStyle} onClick={startGame}>
+              🚀 Start Game
+            </button>
           )}
-
-          {gamePhase === "question" && roundData && (
-            <>
-              <p style={{ textAlign: "center", fontSize: "18px", marginBottom: "10px" }}>
-                Topic: <strong>{roundData.outPlayer === roundData.asker || roundData.outPlayer === roundData.answerer ? "❓ SECRET" : roundData.topic}</strong>
-              </p>
-              <p style={{ textAlign: "center", marginBottom: "20px" }}>
-                Asker: <b>{roundData.asker}</b> | Answerer: <b>{roundData.answerer}</b>
-              </p>
-              <button
-                style={{
-                  ...buttonStyles("#74b9ff"),
-                  ...(hoveredButton === "ask" ? buttonHover : {}),
-                }}
-                onMouseEnter={() => setHoveredButton("ask")}
-                onMouseLeave={() => setHoveredButton(null)}
-                onClick={() => setRoundData({ ...roundData, questionsAsked: roundData.questionsAsked + 1 })}
-              >
-                ❓ Ask Question
-              </button>
-              <button
-                style={{
-                  ...buttonStyles("#a29bfe"),
-                  ...(hoveredButton === "next" ? buttonHover : {}),
-                }}
-                onMouseEnter={() => setHoveredButton("next")}
-                onMouseLeave={() => setHoveredButton(null)}
-                onClick={() => setGamePhase("vote")}
-              >
-                ➡️ Next Phase
-              </button>
-            </>
-          )}
-
-          {gamePhase === "vote" && (
-            <>
-              <h2 style={{ textAlign: "center", fontSize: "24px", marginBottom: "20px" }}>
-                🗳️ Vote for the Odd One Out
-              </h2>
-              {players.map((voter) => (
-                <div key={voter} style={{ marginBottom: "10px" }}>
-                  <label><b>{voter}</b> votes:</label>
-                  <select
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      borderRadius: "15px",
-                      marginTop: "5px",
-                      border: "2px solid #81ecec",
-                    }}
-                    onChange={(e) => handleVote(voter, e.target.value)}
-                  >
-                    <option value="">--</option>
-                    {players.filter(p => p !== voter).map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-              <button
-                style={{
-                  ...buttonStyles("#fab1a0"),
-                  ...(hoveredButton === "submit" ? buttonHover : {}),
-                }}
-                onMouseEnter={() => setHoveredButton("submit")}
-                onMouseLeave={() => setHoveredButton(null)}
-                onClick={endVoting}
-              >
-                ✅ Submit Votes
-              </button>
-            </>
-          )}
-
-          {gamePhase === "guess" && (
-            <>
-              <h2 style={{ textAlign: "center", fontSize: "24px", marginBottom: "20px" }}>
-                🎯 Guess the Topic!
-              </h2>
-              <div style={{ maxHeight: "300px", overflowY: "scroll" }}>
-                {Object.entries(topics).map(([category, items]) => (
-                  <div key={category} style={{ marginBottom: "10px" }}>
-                    <h3 style={{ fontWeight: "bold", fontSize: "18px" }}>{category}</h3>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "8px" }}>
-                      {items.map((item) => (
-                        <button
-                          key={item}
-                          style={{
-                            padding: "8px",
-                            borderRadius: "15px",
-                            backgroundColor: "#ffeaa7",
-                            border: "none",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => handleGuess(item)}
-                        >
-                          {item}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {gamePhase === "leaderboard" && (
-            <>
-              <h2 style={{ textAlign: "center", fontSize: "28px", marginBottom: "20px", color: "#00b894" }}>
-                🏆 Leaderboard
-              </h2>
-              <ul style={{ listStyle: "none", padding: 0 }}>
-                {Object.entries(scores).sort((a, b) => b[1] - a[1]).map(([player, score]) => (
-                  <li key={player} style={{ marginBottom: "8px", fontSize: "18px", textAlign: "center" }}>
-                    {player}: <strong>{score}</strong> pts
-                  </li>
-                ))}
-              </ul>
-              <button
-                style={{
-                  ...buttonStyles("#55efc4"),
-                  marginTop: "20px",
-                  ...(hoveredButton === "newgame" ? buttonHover : {}),
-                }}
-                onMouseEnter={() => setHoveredButton("newgame")}
-                onMouseLeave={() => setHoveredButton(null)}
-                onClick={resetGame}
-              >
-                🔄 New Game
-              </button>
-            </>
-          )}
-        </div>
+        </>
       )}
 
-      {/* Animations keyframes */}
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: scale(0.9); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+      {phase === "choose-topic" && (
+        <>
+          <h2>Choose a Topic</h2>
+          {Object.keys(topics).map((topic) => (
+            <button key={topic} style={voteButtonStyle} onClick={() => chooseTopic(topic)}>
+              {topic}
+            </button>
+          ))}
+        </>
+      )}
+
+      {phase === "reveal-roles" && (
+        <>
+          <h2>🔎 Role Reveal</h2>
+          <h3>{players[currentRevealIndex]}</h3>
+          <button style={buttonStyle} onClick={() => {
+            alert(players[currentRevealIndex] === outPlayer
+              ? "❌ You are out of topic!"
+              : `✅ Your subject: ${subject}`);
+            handleReveal();
+          }}>
+            I am {players[currentRevealIndex]}
+          </button>
+        </>
+      )}
+
+      {phase === "discussion" && (
+        <>
+          <h2>🗣️ Discuss Freely!</h2>
+          <button style={nextButtonStyle} onClick={startVoting}>
+            Start Voting 🗳️
+          </button>
+        </>
+      )}
+
+      {phase === "voting" && (
+        <>
+          <h2>🗳️ {players[currentVotingIndex]}, who do you vote for?</h2>
+          {players.filter(p => p !== players[currentVotingIndex]).map((p) => (
+            <button key={p} style={voteButtonStyle} onClick={() => castVote(p)}>
+              {p}
+            </button>
+          ))}
+        </>
+      )}
+
+      {phase === "voting-result" && (
+        <>
+          <h2>🎉 Voting Results!</h2>
+          <p>{gameResult}</p>
+          <button style={nextButtonStyle} onClick={startGuessing}>
+            Let the Spy Guess! 🎯
+          </button>
+          {calculateVotingResults()}
+        </>
+      )}
+
+      {phase === "spy-guess" && (
+        <>
+          <h2>🎯 {outPlayer}, guess the topic!</h2>
+          {guessOptions.map((option) => (
+            <button key={option} style={voteButtonStyle} onClick={() => spyGuess(option)}>
+              {option}
+            </button>
+          ))}
+        </>
+      )}
+
+      {phase === "end-round" && (
+        <>
+          <h2>✅ Round Finished!</h2>
+          <button style={nextButtonStyle} onClick={resetForNewRound}>
+            Start New Round 🔄
+          </button>
+          <button style={resetButtonStyle} onClick={() => setPhase("leaderboard")}>
+            See Final Scores 🏆
+          </button>
+        </>
+      )}
+
+      {phase === "leaderboard" && (
+        <>
+          <h2>🏆 Leaderboard</h2>
+          {Object.entries(scores)
+            .sort((a, b) => b[1] - a[1])
+            .map(([player, score]) => (
+              <div key={player} style={{ fontSize: "20px", marginBottom: "8px" }}>
+                {player}: {score} pts
+              </div>
+            ))}
+          <button style={nextButtonStyle} onClick={resetGame}>
+            🔄 Start New Game
+          </button>
+        </>
+      )}
     </div>
   );
 };
